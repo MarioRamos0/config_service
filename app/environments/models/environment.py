@@ -4,27 +4,28 @@ from sqlmodel import SQLModel, Field
 
 
 class Environment(SQLModel, table=True):
+    """Model representing an environment configuration"""
 
     __tablename__ = "environments"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True, description="Unique identifier for the environment")
     name: str = Field(
         index=True,
         unique=True,
         nullable=False,
-        description="Nombre único del entorno (slug)."
+        description="Unique name of the environment (slug)"
     )
     description: Optional[str] = Field(
         default=None,
-        description="Breve descripción del propósito del entorno."
+        description="Brief description of the environment's purpose"
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         nullable=False,
-        description="Fecha de creación del entorno (ISO DateTime)."
+        description="Timestamp when the environment was created (ISO DateTime)"
     )
     updated_at: datetime = Field(
         default_factory=datetime.utcnow,
         nullable=False,
-        description="Fecha de última actualización del entorno."
+        description="Timestamp when the environment was last updated"
     )
