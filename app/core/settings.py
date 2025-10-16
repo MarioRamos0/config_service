@@ -1,0 +1,26 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlmodel import SQLModel, create_engine
+from app.variables.models.variable import Variable
+from app.environments.models.environment import Environment
+
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    DEBUG: bool = False
+    ENV: str = "development"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+settings = Settings()
+
+engine = create_engine(settings.DATABASE_URL, echo=settings.DEBUG)
+
+def init_db():
+
+    if settings.ENV == "development":
+        print("Creating database tables...")
+        SQLModel.metadata.create_all(engine)

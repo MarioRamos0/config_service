@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS config_service AUTHORIZATION postgres;
+GRANT ALL PRIVILEGES ON SCHEMA config_service TO postgres;
