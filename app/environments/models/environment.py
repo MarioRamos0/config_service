@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, TYPE_CHECKING, List
+from sqlmodel import SQLModel, Field, Relationship
 
+if TYPE_CHECKING:
+    from app.variables.models.variable import Variable
 
 class Environment(SQLModel, table=True):
     """Model representing an environment configuration"""
@@ -29,3 +31,4 @@ class Environment(SQLModel, table=True):
         nullable=False,
         description="Timestamp when the environment was last updated"
     )
+    variables: List["Variable"] = Relationship(back_populates="environment")

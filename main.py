@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.environments.routes.views import router as environments_router
 from app.users.routers.views import router as users_router
 from app.core.settings import init_db
-
+from app.variables.routers.views import router as variables_router
 app = FastAPI(
     title="Config Service API",
     description="A configuration management service API for managing environments and variables",
@@ -25,4 +25,5 @@ def on_startup():
     init_db()
 
 app.include_router(environments_router, prefix="/environments", tags=["Environments"])
+app.include_router(variables_router, prefix="/environments/{env_name}/variables", tags=["Variables"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
