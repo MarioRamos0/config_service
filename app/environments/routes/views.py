@@ -212,7 +212,7 @@ def patch_environment(
         )
 
 @router.get(
-    "/{env_name}/json",
+    "/{env_name}/.json",
     summary="Get Environment JSON Schema",
     description="Retrieve the JSON schema of a specific environment by its name.",
     response_model=dict,
