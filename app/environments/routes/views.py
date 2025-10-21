@@ -7,6 +7,7 @@ from pydantic import ConfigDict
 from app.environments.models.environment import Environment
 from app.core.dependencies import get_session, get_current_active_user
 from app.users.models.user import User
+from app.variables.models.variable import Variable
 
 router = APIRouter()
 
@@ -202,6 +203,43 @@ def patch_environment(
         session.commit()
         session.refresh(environment)
         return environment
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+@router.get(
+    "/{env_name}/json",
+    summary="Get Environment JSON Schema",
+    description="Retrieve the JSON schema of a specific environment by its name.",
+    response_model=dict,
+)
+def get_environment_json_schema(
+    env_name: str = Path(..., description="Name of the environment to retrieve schema for"),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    try:
+        environment = session.exec(
+            select(Environment).where(Environment.name == env_name)
+        ).first()
+        
+        if not environment:
+            raise HTTPException(status_code=404, detail="Environment not found")
+
+        variables = session.exec(
+            select(Variable).where(Variable.environment_id == environment.id)
+        ).all()
+
+
+        resp={}
+        for var in variables:
+            resp[var.name] = var.value
+        return resp
+    
     except HTTPException:
         raise
     except Exception as e:
