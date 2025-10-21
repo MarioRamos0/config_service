@@ -6,9 +6,13 @@ name = "pypi"
 [packages]
 fastapi = "*"
 uvicorn = "*"
-sqlmodel = "*"
 psycopg2-binary = "*"
 pydantic-settings = "*"
+asyncpg = "*"
+sqlalchemy = "*"
+sqlmodel = "*"
+greenlet = "*"
+pyjwt = "*"
 
 [dev-packages]
 

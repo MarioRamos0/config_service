@@ -6,6 +6,7 @@ from app.core.dependencies import get_session, get_current_active_user
 from app.environments.models.environment import Environment
 from app.variables.models.variable import Variable
 from app.users.models.user import User
+from sqlmodel import SQLModel
 
 router = APIRouter()
 

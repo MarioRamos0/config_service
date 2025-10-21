@@ -22,7 +22,4 @@ settings = Settings()
 engine = create_engine(settings.DATABASE_URL, echo=settings.DEBUG)
 
 def init_db():
-
-    if settings.ENV == "development":
-        print("Creating database tables...")
-        SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine)
