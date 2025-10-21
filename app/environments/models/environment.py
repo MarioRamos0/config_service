@@ -31,4 +31,7 @@ class Environment(SQLModel, table=True):
         nullable=False,
         description="Timestamp when the environment was last updated"
     )
-    variables: List["Variable"] = Relationship(back_populates="environment")
+    variables: List["Variable"] = Relationship(
+        back_populates="environment",
+        sa_relationship_kwargs={"passive_deletes": True},
+    )
