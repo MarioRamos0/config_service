@@ -1,7 +1,10 @@
 
 from datetime import datetime
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from app.environments.models.environment import Environment
 
 class Variable(SQLModel, table=True):
     __tablename__ = "variable"
@@ -41,4 +44,7 @@ class Variable(SQLModel, table=True):
         nullable=False,
         description="Fecha de última actualización de la variable."
     )
+    environment_id: Optional[int] = Field(default=None, foreign_key="environments.id")
+    
+    environment: Optional["Environment"] = Relationship(back_populates="variables")
 
