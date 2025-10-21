@@ -2,12 +2,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import SQLModel, create_engine
 from app.variables.models.variable import Variable
 from app.environments.models.environment import Environment
+from app.users.models.user import User
 
 
 class Settings(BaseSettings):
     DATABASE_URL: str
     DEBUG: bool = False
     ENV: str = "development"
+    JWT_SECRET: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
