@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlmodel import Session, select
 from typing import List, Optional
