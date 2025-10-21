@@ -46,12 +46,14 @@ def list_environments(
 ):
     try:
         offset = (page - 1) * page_size
-        total_count = session.exec(
-            select(func.count()).select_from(Environment)
-        ).one()[0]
+        res = session.exec(select(func.count()).select_from(Environment)).first()
+        total_count = (res[0] if isinstance(res, tuple) else int(res or 0))
 
         environments = session.exec(
-            select(Environment).offset(offset).limit(page_size)
+            select(Environment)
+            .order_by(Environment.id)  
+            .offset(offset)
+            .limit(page_size)
         ).all()
 
         next_url = None
