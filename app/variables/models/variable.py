@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Column, ForeignKey, Integer
 
 if TYPE_CHECKING:
     from app.environments.models.environment import Environment
@@ -44,7 +45,17 @@ class Variable(SQLModel, table=True):
         nullable=False,
         description="Fecha de última actualización de la variable."
     )
-    environment_id: Optional[int] = Field(default=None, foreign_key="environments.id")
-    
-    environment: Optional["Environment"] = Relationship(back_populates="variables")
+    environment_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            ForeignKey("environments.id", ondelete="CASCADE"),
+            nullable=True,
+        ),
+    )
+
+    environment: Optional["Environment"] = Relationship(
+        back_populates="variables",
+        sa_relationship_kwargs={"passive_deletes": True},
+    )
 

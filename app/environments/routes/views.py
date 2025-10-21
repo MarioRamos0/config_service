@@ -247,3 +247,32 @@ def get_environment_json_schema(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"
         )
+    
+@router.delete(
+    "/{env_name}/",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete Environment",
+    description="Delete a specific environment by its name."
+)
+def delete_environment(
+    env_name: str = Path(..., description="Name of the environment to delete"),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    try:
+        environment = session.exec(
+            select(Environment).where(Environment.name == env_name)
+        ).first()
+        if not environment:
+            raise HTTPException(status_code=404, detail="Environment not found")
+
+        session.delete(environment)
+        session.commit()
+        return
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
