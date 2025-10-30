@@ -45,8 +45,7 @@ services:
     environment:
       DEBUG: 'false'
       ENV: 'production'
-      DATABASE_URL: postgresql+psycopg2://$$(cat /run/secrets/db_user):$$(cat /run/secrets/db_password)@postgres-db:5432/$$(cat /run/secrets/db_name)?options=-csearch_path=config_service
-      JWT_SECRET: /run/secrets/jwt_secret
+      DATABASE_URL: $DATABASE_URL
       PORT: ${PORT:-8000}
     secrets:
       - jwt_secret
