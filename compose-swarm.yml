@@ -1,17 +1,5 @@
 version: '3.9'
 
-secrets:
-  jwt_secret:
-    file: ./jwt_secret
-  db_password:
-    file: ./db_password
-  db_user:
-    file: ./db_user
-  db_name:
-    file: ./db_name
-  database_url:
-    file: ./database_url
-
 services:
   postgres-db:
     image: postgres:17-alpine3.22
@@ -19,27 +7,23 @@ services:
     deploy:
       replicas: 1
     environment:
-      POSTGRES_DB: /run/secrets/db_name
-      POSTGRES_USER: /run/secrets/db_user
-      POSTGRES_PASSWORD: /run/secrets/db_password
-    secrets:
-      - db_password
-      - db_user
-      - db_name
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - cfgsycapi_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/db_user)"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   web-app:
     image: marioramos0/cfgsvg4:1.1
-    restart: always
+    build: .
     deploy:
       replicas: 3
     ports:
@@ -47,17 +31,14 @@ services:
     environment:
       DEBUG: 'false'
       ENV: 'development'
-      DATABASE_URL: /run/secrets/database_url
       PORT: ${PORT:-8000}
-    command: python main.py
-    secrets:
-      - jwt_secret
-      - db_password
-      - db_user
-      - db_name
-      - database_url
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}?options=-csearch_path=config_service
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - cfgsycapi_net
+    command: python main.py
+    restart: always
+
 
 volumes:
   postgres_data:
