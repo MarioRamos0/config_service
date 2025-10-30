@@ -9,6 +9,8 @@ secrets:
     file: ./db_user
   db_name:
     file: ./db_name
+  database_url:
+    file: ./database_url
 
 services:
   postgres-db:
@@ -45,13 +47,14 @@ services:
     environment:
       DEBUG: 'false'
       ENV: 'production'
-      DATABASE_URL: $DATABASE_URL
+      DATABASE_URL: /run/secrets/database_url
       PORT: ${PORT:-8000}
     secrets:
       - jwt_secret
       - db_password
       - db_user
       - db_name
+      - database_url
     networks:
       - cfgsycapi_net
 
