@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 # entrypoint.sh
 
 DB_HOST="postgres-db"
