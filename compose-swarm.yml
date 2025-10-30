@@ -45,7 +45,7 @@ services:
       - "${PORT}:8000"
     environment:
       DEBUG: 'false'
-      ENV: 'production'
+      ENV: 'development'
       DATABASE_URL: /run/secrets/database_url
       PORT: ${PORT:-8000}
     secrets:
