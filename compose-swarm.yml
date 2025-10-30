@@ -2,13 +2,13 @@ version: '3.9'
 
 secrets:
   jwt_secret:
-    external: true
+    file: ./jwt_secret
   db_password:
-    external: true
+    file: ./db_password
   db_user:
-    external: true
+    file: ./db_user
   db_name:
-    external: true
+    file: ./db_name
 
 services:
   postgres-db:
@@ -16,13 +16,10 @@ services:
     restart: always
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
     environment:
-      POSTGRES_DB_FILE: /run/secrets/db_name
-      POSTGRES_USER_FILE: /run/secrets/db_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: /run/secrets/db_name
+      POSTGRES_USER: /run/secrets/db_user
+      POSTGRES_PASSWORD: /run/secrets/db_password
     secrets:
       - db_password
       - db_user
@@ -38,73 +35,18 @@ services:
       timeout: 5s
       retries: 5
 
-  cfgsycapi-migrate:
-    image: marioramos0/cfgsvg4:1.1
-    restart: "no"
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-    environment:
-      DEBUG: 'false'
-      ENV: 'production'
-      DATABASE_URL: postgresql+psycopg2://$$(cat /run/secrets/db_user):$$(cat /run/secrets/db_password)@postgres-db:5432/$$(cat /run/secrets/db_name)?options=-csearch_path=config_service
-      JWT_SECRET_FILE: /run/secrets/jwt_secret
-    secrets:
-      - jwt_secret
-      - db_password
-      - db_user
-      - db_name
-    command: python -c "
-      import time
-      import psycopg2
-      for i in range(30):
-          try:
-              conn = psycopg2.connect(
-                  dbname=open('/run/secrets/db_name').read(),
-                  user=open('/run/secrets/db_user').read(),
-                  password=open('/run/secrets/db_password').read(),
-                  host='postgres-db'
-              )
-              conn.close()
-              print('Database is ready')
-              break
-          except Exception as e:
-              print(f'Database not ready: {e}')
-              time.sleep(2)
-      from app.core.settings import init_db
-      init_db()
-      print('Database initialized')
-      "
-    networks:
-      - cfgsycapi_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  cfgsycapi:
+  web-app:
     image: marioramos0/cfgsvg4:1.1
     restart: always
     deploy:
       replicas: 3
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-      placement:
-        constraints:
-          - node.role == worker
     ports:
       - "${PORT}:8000"
     environment:
       DEBUG: 'false'
       ENV: 'production'
       DATABASE_URL: postgresql+psycopg2://$$(cat /run/secrets/db_user):$$(cat /run/secrets/db_password)@postgres-db:5432/$$(cat /run/secrets/db_name)?options=-csearch_path=config_service
-      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_SECRET: /run/secrets/jwt_secret
       PORT: ${PORT:-8000}
     secrets:
       - jwt_secret
@@ -113,15 +55,14 @@ services:
       - db_name
     networks:
       - cfgsycapi_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-      cfgsycapi-migrate:
-        condition: service_completed_successfully
 
 volumes:
   postgres_data:
     driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfssrv01,rw
+      device: ":/data/docker-vols/group04/postgres_data"
 
 networks:
   cfgsycapi_net:
