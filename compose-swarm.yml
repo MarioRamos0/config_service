@@ -28,6 +28,7 @@ services:
       - db_name
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - cfgsycapi_net
     healthcheck:
@@ -48,6 +49,7 @@ services:
       ENV: 'development'
       DATABASE_URL: /run/secrets/database_url
       PORT: ${PORT:-8000}
+    command: python main.py
     secrets:
       - jwt_secret
       - db_password
