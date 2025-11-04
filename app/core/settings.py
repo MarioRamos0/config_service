@@ -9,6 +9,8 @@ from app.users.models.user import User
 
 
 class Settings(BaseSettings):
+    DATABASE_URL: Optional[str] = None
+    JWT_SECRET: Optional[str] = None
     DATABASE_URL_FILE: str
     DEBUG: bool = False
     ENV: str = "development"
