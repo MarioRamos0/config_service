@@ -2,90 +2,70 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import SQLModel, create_engine
 import os
 from typing import ClassVar
-from functools import cached_property # IMPORTE CLAVE
 
 from app.variables.models.variable import Variable
 from app.environments.models.environment import Environment
 from app.users.models.user import User
 
+# --- FUNCIONES DE CARGA DE SECRETO ---
+def decode_secret_file(value: str, fallback_value: str) -> str:
+    """
+    Decodifica el contenido de una variable que puede ser:
+    1. El contenido directo de un secreto (e.g., una URL de BD o un secreto JWT).
+    2. Una ruta a un archivo de secreto (e.g., /run/secrets/database_url).
+    """
+    # 1. Si es una ruta de archivo (Docker Swarm o Compose)
+    if value.startswith("/") and os.path.exists(value):
+        try:
+            with open(value, 'r') as f:
+                return f.read().strip()
+        except Exception as e:
+            # En caso de error de permisos o lectura, imprime y usa fallback
+            print(f"ERROR: Fallo al leer el archivo de secreto en {value}: {e}")
+            return fallback_value
+    
+    # 2. Si es el valor directo (e.g., dev/test) o no existe el archivo en la ruta
+    if value:
+        return value
+        
+    # 3. Fallback final
+    return fallback_value
+
 
 class Settings(BaseSettings):
-    # Campos que Pydantic carga directamente del entorno (.env) o Docker.
-    # Eliminamos cualquier campo llamado DATABASE_URL o JWT_SECRET para
-    # evitar la colisión con las propiedades calculadas.
+    # Pydantic carga directamente estos campos. Sus valores iniciales serán
+    # las RUTAS de los secretos (e.g., /run/secrets/...) o el valor directo.
+    DATABASE_URL: str
+    JWT_SECRET: str
+    
     DEBUG: bool = False
     ENV: str = "development"
-    
-    # Nombres de secretos para buscar en /run/secrets (ClassVar no se valida)
-    DB_URL_SECRET_NAME: ClassVar[str] = "database_url"
-    JWT_SECRET_NAME: ClassVar[str] = "jwt_secret" 
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
-
-    # USAMOS @cached_property para que Pydantic lo trate como un atributo
-    # calculado de solo lectura que se evalúa DESPUÉS de la inicialización,
-    # resolviendo el conflicto de validación.
-    @cached_property
-    def DATABASE_URL(self) -> str:
-        # 1. Prioridad: Lógica para leer el secreto de Docker Swarm (de /run/secrets/database_url)
-        secret_path = os.path.join("/run/secrets", self.DB_URL_SECRET_NAME)
-        try:
-            if os.path.exists(secret_path):
-                with open(secret_path, 'r') as f:
-                    return f.read().strip()
-            
-            # 2. Fallback: Si no hay secreto fijo, busca la variable de entorno
-            env_val = os.getenv("DATABASE_URL")
-            if env_val:
-                # Si el valor de ENV es una RUTA (como en su compose), leemos el contenido.
-                if env_val.startswith("/run/secrets"):
-                     with open(env_val, 'r') as f:
-                        return f.read().strip()
-                # Si es una URL directa (como en desarrollo local), la devolvemos.
-                return env_val
-                
-        except Exception as e:
-            # Captura errores de lectura/permisos
-            print(f"Error al leer el secreto de la base de datos: {e}")
-            return "sqlite:///./error_db.db"
-
-        # 3. Fallback final
-        return "sqlite:///./local.db"
-
-    @cached_property
-    def JWT_SECRET(self) -> str:
-        # 1. Prioridad: Lógica para leer el secreto de Docker Swarm (de /run/secrets/jwt_secret)
-        secret_path = os.path.join("/run/secrets", self.JWT_SECRET_NAME)
-        try:
-            if os.path.exists(secret_path):
-                with open(secret_path, 'r') as f:
-                    return f.read().strip()
-            
-            # 2. Fallback: Si no hay secreto fijo, busca la variable de entorno
-            env_val = os.getenv("JWT_SECRET")
-            if env_val:
-                 # Si el valor de ENV es una RUTA (como en su compose), leemos el contenido.
-                if env_val.startswith("/run/secrets"):
-                     with open(env_val, 'r') as f:
-                        return f.read().strip()
-                # Si es un secreto directo, lo devolvemos.
-                return env_val
-
-        except Exception as e:
-            print(f"Error al leer el secreto JWT: {e}")
-            return "FALLBACK_JWT_SECRET_ERROR"
-
-        # 3. Fallback final
-        return "DEFAULT_JWT_SECRET_FOR_DEV"
-
-
+    
+# 1. Cargar la configuración. DATABASE_URL y JWT_SECRET contienen la RUTA al archivo de secreto.
 settings = Settings()
 
-# A partir de aquí, settings.DATABASE_URL ya está disponible con la URL final.
+# 2. Decodificar el contenido real de los secretos (rompiendo el ciclo de Pydantic)
+# y SOBREESCRIBIR el valor de la propiedad en el objeto settings.
+# Esto asegura que el resto de la aplicación (como jwt.py) lea el CONTENIDO final.
+settings.DATABASE_URL = decode_secret_file(
+    settings.DATABASE_URL, 
+    "sqlite:///./local.db" # Fallback para DB si todo falla
+)
+
+settings.JWT_SECRET = decode_secret_file(
+    settings.JWT_SECRET, 
+    "DEFAULT_JWT_SECRET_FOR_DEV" # Fallback para JWT si todo falla
+)
+
+
+# 3. Inicializar el motor de la BD usando el contenido DECODIFICADO
+# Ahora settings.DATABASE_URL contiene el valor final real.
 engine = create_engine(settings.DATABASE_URL, echo=settings.DEBUG)
 
 def init_db():
