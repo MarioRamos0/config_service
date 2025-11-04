@@ -3,7 +3,6 @@ version: '3.9'
 services:
   postgres-db:
     image: postgres:17-alpine3.22
-    restart: always
     deploy:
       replicas: 1
     environment:
@@ -12,7 +11,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - cfgsycapi_net
     healthcheck:
@@ -22,7 +20,7 @@ services:
       retries: 5
 
   web-app:
-    image: marioramos0/cfgsvg4:1.1
+    image: marioramos0/cfgsvg4:2.0
     build: .
     deploy:
       replicas: 3
@@ -32,12 +30,11 @@ services:
       DEBUG: 'false'
       ENV: 'development'
       PORT: ${PORT:-8000}
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}?options=-csearch_path=config_service
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
     networks:
       - cfgsycapi_net
     command: python main.py
-    restart: always
 
 
 volumes:
