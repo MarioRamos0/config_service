@@ -1,4 +1,4 @@
-# Comandos a ejcutar 
+# Comandos a ejecutar 
 
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=12345
@@ -12,7 +12,6 @@ frontend http
     bind *:80
     mode http
 
-    # default_backend webserverso
     acl grupo04_acl hdr(host) -i grupo04.lab
 
     use_backend grupo04_backend if grupo04_acl
@@ -20,6 +19,7 @@ frontend http
 backend grupo04_backend
     mode http
     option forwardfor
-    server grupo04-swarm01 swarm01:8085 check cookie ipcam1
-    server grupo04-swarm02 swarm02:8085 check cookie ipcam2
-    server grupo04-swarm03 swarm03:8085 check cookie ipcam3
+    balance roundrobin
+    server grupo04-swarm01 swarm01:8085 check cookie grupo04-swarm01
+    server grupo04-swarm02 swarm02:8085 check cookie grupo04-swarm02
+    server grupo04-swarm03 swarm03:8085 check cookie grupo04-swarm03
