@@ -1,14 +1,5 @@
 version: '3.9'
 
-secrets:
-  db_user_passwd:
-    file: ./db_user_passwd
-  database_url:
-    file: ./database_url
-  jwt_secret:
-    file: ./jwt_secret
-
-
 services:
   postgres-db:
     image: postgres:17-alpine3.22
@@ -17,11 +8,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: /run/secrets/db_user_passwd
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    secrets:
-      - db_user_passwd
     networks:
       - cfgsycapi_net
     healthcheck:
@@ -37,19 +26,14 @@ services:
       replicas: 3
     ports:
       - "${PORT}:8000"
-    secrets:
-      - jwt_secret
-      - database_url
     environment:
       DEBUG: 'True'
       ENV: 'development'
       PORT: ${PORT:-8000}
-      DATABASE_URL: /run/secrets/database_url
-      JWT_SECRET: /run/secrets/jwt_secret
-
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - cfgsycapi_net
-
 
 volumes:
   postgres_data:

@@ -1,12 +1,25 @@
 # Comandos a ejcutar 
 
 export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=12345
+export JWT_SECRET=secreta
 export POSTGRES_DB=db_name
 export PORT=8085
 
-echo -n "jwtsecreta" > jwt_secret
-echo -n "1234" > db_user_passwd
-echo -n "postgresql+psycopg2://${POSTGRES_USER}:$(cat POSTGRES_PASSWORD)@postgres-db:5432/${POSTGRES_DB}" > database_url
-
-
 # Configuraciones ha proxy
+
+frontend http
+    bind *:80
+    mode http
+
+    # default_backend webserverso
+    acl grupo04_acl hdr(host) -i grupo04.lab
+
+    use_backend grupo04_backend if grupo04_acl
+
+backend grupo04_backend
+    mode http
+    option forwardfor
+    server grupo04-swarm01 swarm01:8085 check cookie ipcam1
+    server grupo04-swarm02 swarm02:8085 check cookie ipcam2
+    server grupo04-swarm03 swarm03:8085 check cookie ipcam3
